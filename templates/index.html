@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% for (year, articles) in site.index.iter().rev() %}
+{% if loop.first %}
+<h2>{{ year.0 }}</h2>
+<ul>
+{% for article in articles.iter().rev() %}
+    <li>{{ article.published.format("%Y-%m-%d") }} <a href="{{ base }}{{ article.path() }}">{{ article.title }}</a></li>
+{% endfor %}
+</ul>
+{% else %}
+<h3><a href="{{ base }}{{ year.0 }}.html">{{ year.0 }} ({{ articles.len() }})</a></h3>
+{% endif %}
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ year.0 }} - {% call super() %}{% endblock %}
+
+{% block content %}
+<h2>{{ year.0 }}</h2>
+<ul>
+{% for article in site.index.get(year).unwrap().iter().rev() %}
+    <li>{{ article.published.format("%Y-%m-%d") }} <a href="{{ base }}{{ article.path() }}">{{ article.title }}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

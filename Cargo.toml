@@ -1,0 +1,17 @@
+[package]
+name = "imo"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+orgize = { version = "0.9.0", features = ["chrono", "syntect", "indexmap"] }
+indextree = "4.3"
+chrono = "0.4.19"
+askama = "0.11.1"
+clap = { version = "3.2.13", features = ["derive"] }
+url = "2.2.2"
+atom_syndication = "0.11.0"
+filetime = "0.2.17"

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - {% call super() %}{% endblock %}
+
+{% block content %}
+{{ article.published.format("%Y-%m-%d") }}
+{% if article.updated.is_some() %}(updated: {{ article.updated.unwrap().format("%Y-%m-%d") }}){% endif %}
+{{ content|safe }}
+{% endblock %}

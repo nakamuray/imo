@@ -1,0 +1,16 @@
+* imo
+
+imo is static site generator for Emacs org-mode files.
+
+imo collect marked headlines from input org files and generate static blog site from it (1 html per headline).
+
+** usage
+
+1. write org as usual
+2. mark headlines you want to output as a blog article
+   + set =blog= tag
+   + set =SCHEDULED= (it become a /publish date/ of this article)
+   + set =ID= property (it become file name of this article)
+3. run command to generate site
+   + ~imo --site-name "my site" --output "_html" /path/to/memo.org~
+4. view the site locally, or upload it to server, as you like
