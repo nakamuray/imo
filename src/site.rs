@@ -228,6 +228,14 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
         }
     }
 
+    // detach (remove) headline node which have "PRIVATE" tag
+    for subheadline in headlines(&headline, &org_) {
+        let title = subheadline.title(&org_);
+        if title.tags.contains(&Cow::Borrowed("PRIVATE")) {
+            subheadline.detach(&mut org_);
+        }
+    }
+
     drop(org_);
 
     Some(Article {
@@ -242,15 +250,19 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
 }
 
 fn collect_ids(headline: &Headline, org: &Org) -> Vec<Id> {
-    let mut ids = Vec::new();
+    headlines(headline, org)
+        .iter()
+        .filter_map(|child| get_id(&child.title(org)))
+        .collect()
+}
+
+fn headlines(headline: &Headline, org: &Org) -> Vec<Headline> {
+    let mut r = Vec::new();
     for child in headline.children(org) {
-        let title = child.title(org);
-        if let Some(id) = get_id(&title) {
-            ids.push(id);
-        }
-        ids.extend(collect_ids(&child, org));
+        r.push(child);
+        r.extend(headlines(&child, org));
     }
-    ids
+    r
 }
 
 pub fn get_id(title: &Title) -> Option<Id> {
