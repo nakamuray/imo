@@ -13,8 +13,17 @@ use std::rc::Rc;
 use std::sync::Mutex;
 use url::Url;
 
+#[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
+pub struct Id(String);
+
+impl Id {
+    pub fn new(id: String) -> Self {
+        Id(id)
+    }
+}
+
 pub struct Article {
-    pub id: String,
+    pub id: Id,
     pub published: NaiveDateTime,
     pub updated: Option<NaiveDateTime>,
     pub title: String,
@@ -34,8 +43,8 @@ impl Article {
     }
 }
 
-pub fn id_to_path(id: &str) -> String {
-    format!("articles/{}/{}.html", id.chars().last().unwrap(), id)
+pub fn id_to_path(id: &Id) -> String {
+    format!("articles/{}/{}.html", id.0.chars().last().unwrap(), id.0)
 }
 
 impl PartialEq for Article {
@@ -76,7 +85,7 @@ pub struct Site {
     pub url: Option<Url>,
     pub feed: bool,
     pub index: BTreeMap<Year, BTreeSet<Rc<Article>>>,
-    pub articles: BTreeMap<String, Rc<Article>>,
+    pub articles: BTreeMap<Id, Rc<Article>>,
     pub last_update: Option<NaiveDateTime>,
 }
 
@@ -170,7 +179,7 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
         return None;
     }
     let title = title.raw.to_string();
-    let id = id.to_string();
+    let id = Id(id.to_string());
 
     let mut updated = None;
 

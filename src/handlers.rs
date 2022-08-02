@@ -6,7 +6,7 @@ use std::io::{Error, Write};
 use std::marker::PhantomData;
 use url::{ParseError, Url};
 
-use crate::site::id_to_path;
+use crate::site::{id_to_path, Id};
 
 pub struct ImoHtmlHandler<E: From<Error>, H: HtmlHandler<E>> {
     base: String,
@@ -47,7 +47,7 @@ impl<E: From<Error>, H: HtmlHandler<E>> HtmlHandler<E> for ImoHtmlHandler<E, H> 
                         w,
                         "<a href=\"{}{}\">{}</a>",
                         HtmlEscape(&self.base),
-                        HtmlEscape(id_to_path(&id)),
+                        HtmlEscape(id_to_path(&Id::new(id))),
                         HtmlEscape(link.desc.as_ref().unwrap_or(&link.path))
                     )?;
                 } else if link.path.starts_with("file:") {
