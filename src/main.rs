@@ -2,6 +2,7 @@ use std::fs;
 use std::io::Read;
 use std::io::Result;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::Instant;
 use url::Url;
 
@@ -10,6 +11,7 @@ use clap::Parser;
 mod generator;
 mod handlers;
 mod site;
+mod utils;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -55,7 +57,9 @@ fn main() -> Result<()> {
         generator::Output::Stdout
     };
 
-    generator::generate(&site, output)?;
+    let site = Rc::new(site);
+
+    generator::generate(site.clone(), output)?;
 
     let duration = start.elapsed();
     let articles = site.articles.len();

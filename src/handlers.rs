@@ -4,19 +4,23 @@ use orgize::{
 };
 use std::io::{Error, Write};
 use std::marker::PhantomData;
+use std::rc::Rc;
 use url::{ParseError, Url};
 
-use crate::site::{id_to_path, Id};
+use crate::site::{get_id, id_to_path, Id, Site};
+use crate::utils::notice;
 
 pub struct ImoHtmlHandler<E: From<Error>, H: HtmlHandler<E>> {
+    site: Rc<Site>,
     base: String,
     inner: H,
     e: PhantomData<E>,
 }
 
 impl<E: From<Error>, H: HtmlHandler<E>> ImoHtmlHandler<E, H> {
-    pub fn new(base: String, inner: H) -> Self {
+    pub fn new(site: Rc<Site>, base: String, inner: H) -> Self {
         ImoHtmlHandler {
+            site,
             base,
             inner,
             ..Default::default()
@@ -30,6 +34,7 @@ impl<E: From<Error>, H: HtmlHandler<E>> ImoHtmlHandler<E, H> {
 impl<E: From<Error>, H: HtmlHandler<E>> Default for ImoHtmlHandler<E, H> {
     fn default() -> Self {
         ImoHtmlHandler {
+            site: Rc::new(Site::new("".to_string(), None, false)),
             base: "".to_string(),
             inner: H::default(),
             e: PhantomData,
@@ -40,16 +45,46 @@ impl<E: From<Error>, H: HtmlHandler<E>> Default for ImoHtmlHandler<E, H> {
 impl<E: From<Error>, H: HtmlHandler<E>> HtmlHandler<E> for ImoHtmlHandler<E, H> {
     fn start<W: Write>(&mut self, mut w: W, element: &Element) -> Result<(), E> {
         match element {
-            Element::Link(link) => {
-                if link.path.starts_with("id:") {
-                    let id = link.path[3..].to_string();
+            Element::Title(title) => {
+                if let Some(id) = get_id(title) {
                     write!(
                         w,
-                        "<a href=\"{}{}\">{}</a>",
-                        HtmlEscape(&self.base),
-                        HtmlEscape(id_to_path(&Id::new(id))),
-                        HtmlEscape(link.desc.as_ref().unwrap_or(&link.path))
+                        "<h{} id=\"{}\">",
+                        if title.level <= 6 { title.level } else { 6 },
+                        HtmlEscape(id.to_string())
                     )?;
+                } else {
+                    write!(w, "<h{}>", if title.level <= 6 { title.level } else { 6 })?;
+                }
+            }
+            Element::Link(link) => {
+                if link.path.starts_with("id:") {
+                    let id = Id::new(link.path[3..].to_string());
+                    if self.site.articles.contains_key(&id) {
+                        write!(
+                            w,
+                            "<a href=\"{}{}\">{}</a>",
+                            HtmlEscape(&self.base),
+                            HtmlEscape(id_to_path(&id)),
+                            HtmlEscape(link.desc.as_ref().unwrap_or(&link.path))
+                        )?;
+                    } else if let Some(article_id) = self.site.subid_to_articleid_map.get(&id) {
+                        write!(
+                            w,
+                            "<a href=\"{}{}#{}\">{}</a>",
+                            HtmlEscape(&self.base),
+                            HtmlEscape(id_to_path(&article_id)),
+                            HtmlEscape(&id.to_string()),
+                            HtmlEscape(link.desc.as_ref().unwrap_or(&link.path))
+                        )?;
+                    } else {
+                        notice(&format!("id:{} not found", id.to_string()));
+                        write!(
+                            w,
+                            "{}",
+                            HtmlEscape(link.desc.as_ref().unwrap_or(&link.path))
+                        )?;
+                    }
                 } else if link.path.starts_with("file:") {
                     // remove "file:" prefix and re-start
                     let mut fixed = link.clone();

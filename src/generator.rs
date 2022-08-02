@@ -7,6 +7,7 @@ use orgize::export::{DefaultHtmlHandler, SyntectHtmlHandler};
 use std::fs;
 use std::io::{stdout, Result, Write};
 use std::path::PathBuf;
+use std::rc::Rc;
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -65,7 +66,7 @@ impl Output {
     }
 }
 
-pub fn generate(site: &site::Site, output: Output) -> Result<()> {
+pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
     let index = IndexTemplate {
         site: &site,
         base: "".to_string(),
@@ -88,8 +89,11 @@ pub fn generate(site: &site::Site, output: Output) -> Result<()> {
     }
 
     let base = "../../".to_string();
-    let mut handler =
-        handlers::ImoHtmlHandler::new(base.clone(), SyntectHtmlHandler::new(DefaultHtmlHandler));
+    let mut handler = handlers::ImoHtmlHandler::new(
+        site.clone(),
+        base.clone(),
+        SyntectHtmlHandler::new(DefaultHtmlHandler),
+    );
 
     for article in site.articles.values() {
         let content = article.html(&mut handler)?;

@@ -1,7 +1,7 @@
 use chrono::{Datelike, NaiveDateTime};
 use indextree::NodeEdge;
 use orgize::{
-    elements::{Element, Timestamp},
+    elements::{Element, Timestamp, Title},
     export::HtmlHandler,
     Headline, Org,
 };
@@ -13,12 +13,17 @@ use std::rc::Rc;
 use std::sync::Mutex;
 use url::Url;
 
+use crate::utils::notice;
+
 #[derive(Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Id(String);
 
 impl Id {
     pub fn new(id: String) -> Self {
         Id(id)
+    }
+    pub fn to_string(&self) -> String {
+        self.0.clone()
     }
 }
 
@@ -29,6 +34,7 @@ pub struct Article {
     pub title: String,
     pub org: Rc<Mutex<Org<'static>>>,
     pub headline: Headline,
+    pub subids: Vec<Id>,
 }
 
 impl Article {
@@ -87,6 +93,7 @@ pub struct Site {
     pub index: BTreeMap<Year, BTreeSet<Rc<Article>>>,
     pub articles: BTreeMap<Id, Rc<Article>>,
     pub last_update: Option<NaiveDateTime>,
+    pub subid_to_articleid_map: BTreeMap<Id, Id>,
 }
 
 impl Site {
@@ -98,6 +105,7 @@ impl Site {
             index: BTreeMap::new(),
             articles: BTreeMap::new(),
             last_update: None,
+            subid_to_articleid_map: BTreeMap::new(),
         }
     }
     pub fn load_org_data(&mut self, data: String) {
@@ -118,6 +126,12 @@ impl Site {
                 }
 
                 self.articles.insert(article.id.clone(), article.clone());
+
+                for subid in &article.subids {
+                    self.subid_to_articleid_map
+                        .insert(subid.clone(), article.id.clone());
+                }
+
                 let year = Year(article.published.year());
                 if let Some(set) = self.index.get_mut(&year) {
                     set.insert(article);
@@ -129,10 +143,6 @@ impl Site {
             }
         }
     }
-}
-
-fn notice(message: &str) {
-    eprintln!("\x1b[90mNOTICE: {}\x1b[0m", message);
 }
 
 fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Article> {
@@ -160,18 +170,14 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
             None
         }
     }?;
-    let id = title
-        .properties
-        .iter()
-        .find_map(|(key, value)| if key == "ID" { Some(value) } else { None })
-        .or_else(|| {
-            notice(&format!(
-                "headline \"{}\" has blog tag, but does not have ID",
-                title.raw
-            ));
-            None
-        })?;
-    if id.is_empty() {
+    let id = get_id(&title).or_else(|| {
+        notice(&format!(
+            "headline \"{}\" has blog tag, but does not have ID",
+            title.raw
+        ));
+        None
+    })?;
+    if id.0.is_empty() {
         notice(&format!(
             "headline \"{}\" has blog tag, but ID is empty",
             title.raw
@@ -179,7 +185,7 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
         return None;
     }
     let title = title.raw.to_string();
-    let id = Id(id.to_string());
+    let subids = collect_ids(&headline, &org_);
 
     let mut updated = None;
 
@@ -231,6 +237,29 @@ fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Arti
         title: title,
         org: org,
         headline: headline,
+        subids: subids,
+    })
+}
+
+fn collect_ids(headline: &Headline, org: &Org) -> Vec<Id> {
+    let mut ids = Vec::new();
+    for child in headline.children(org) {
+        let title = child.title(org);
+        if let Some(id) = get_id(&title) {
+            ids.push(id);
+        }
+        ids.extend(collect_ids(&child, org));
+    }
+    ids
+}
+
+pub fn get_id(title: &Title) -> Option<Id> {
+    title.properties.iter().find_map(|(key, value)| {
+        if key == "ID" {
+            Some(Id::new(value.to_string()))
+        } else {
+            None
+        }
     })
 }
 
