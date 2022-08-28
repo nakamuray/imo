@@ -1,0 +1,28 @@
+body {
+    display: flex;
+    justify-content: center;
+}
+div.main {
+    width: 80%;
+}
+div.footer {
+    margin: 1em;
+    text-align: center;
+}
+.header h1 a {
+    color: inherit;
+}
+table {
+    border-collapse: collapse;
+}
+table thead {
+    background-color: #eeeeee;
+}
+table th,
+table td {
+    border: 1px solid darkgrey;
+    padding: 0.5em;
+}
+pre {
+    overflow: auto;
+}

@@ -4,10 +4,17 @@ use atom_syndication::{ContentBuilder, EntryBuilder, FeedBuilder, LinkBuilder};
 use chrono::{Local, NaiveDateTime, TimeZone};
 use filetime::{set_file_mtime, FileTime};
 use orgize::export::{DefaultHtmlHandler, SyntectHtmlHandler};
+use rust_embed::RustEmbed;
 use std::fs;
 use std::io::{stdout, Result, Write};
 use std::path::PathBuf;
 use std::rc::Rc;
+
+#[derive(RustEmbed)]
+#[folder = "static/"]
+#[exclude = ".*"]
+#[prefix = "static/"]
+pub struct StaticFiles;
 
 #[derive(Template)]
 #[template(path = "index.html")]
@@ -150,6 +157,15 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
             feed.set_updated(updated);
         }
         output.write("atom.xml", &feed.to_string(), site.last_update)?;
+    }
+
+    for filename in StaticFiles::iter() {
+        let file = StaticFiles::get(&filename).unwrap();
+        let mtime = file
+            .metadata
+            .last_modified()
+            .map(|m| NaiveDateTime::from_timestamp(m as i64, 0));
+        output.write(&filename, std::str::from_utf8(&file.data).unwrap(), mtime)?;
     }
 
     Ok(())

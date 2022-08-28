@@ -3,39 +3,10 @@
     <head>
         <title>{% block title %}{{ site.name }}{% endblock %}</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <link rel="stylesheet" href="{{ base }}static/style.css">
 {% if site.feed %}
         <link href="{{ base }}atom.xml" type="application/atom+xml" rel="alternate">
 {% endif %}
-        <style>
-            body {
-                display: flex;
-                justify-content: center;
-            }
-            div.main {
-                width: 80%;
-            }
-            div.footer {
-                margin: 1em;
-                text-align: center;
-            }
-            .header h1 a {
-                color: inherit;
-            }
-            table {
-                border-collapse: collapse;
-            }
-            table thead {
-                background-color: #eeeeee;
-            }
-            table th,
-            table td {
-                border: 1px solid darkgrey;
-                padding: 0.5em;
-            }
-            pre {
-                overflow: auto;
-            }
-        </style>
     </head>
     <body>
         <div class="main">

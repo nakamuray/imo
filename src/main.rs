@@ -64,20 +64,23 @@ fn main() -> Result<()> {
     let duration = start.elapsed();
     let articles = site.articles.len();
     let indices = site.index.len();
+    let statics = generator::StaticFiles::iter().count();
     if site.feed {
         eprintln!(
-            "generate {} files ({} articles, {} indices, 1 feed) in {:.2}s",
-            articles + indices + 1,
+            "generate {} files ({} articles, {} indices, 1 feed, {} static files) in {:.2}s",
+            articles + indices + 1 + statics,
             articles,
             indices,
+            statics,
             duration.as_secs_f32()
         );
     } else {
         eprintln!(
-            "generate {} files ({} articles, {} indices) in {:.2}s",
-            articles + indices,
+            "generate {} files ({} articles, {} indices, {} static files) in {:.2}s",
+            articles + indices + statics,
             articles,
             indices,
+            statics,
             duration.as_secs_f32()
         );
     }
