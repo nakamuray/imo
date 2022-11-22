@@ -164,7 +164,7 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
         let mtime = file
             .metadata
             .last_modified()
-            .map(|m| NaiveDateTime::from_timestamp(m as i64, 0));
+            .and_then(|m| NaiveDateTime::from_timestamp_opt(m as i64, 0));
         output.write(&filename, std::str::from_utf8(&file.data).unwrap(), mtime)?;
     }
 
