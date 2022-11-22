@@ -161,6 +161,9 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
 
     for filename in StaticFiles::iter() {
         let file = StaticFiles::get(&filename).unwrap();
+        if file.metadata.is_dir() {
+            continue;
+        }
         let mtime = file
             .metadata
             .last_modified()
