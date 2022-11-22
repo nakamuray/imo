@@ -6,11 +6,11 @@ use orgize::{
     Headline, Org,
 };
 use std::borrow::Cow;
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{Error, Write};
 use std::rc::Rc;
-use std::sync::Mutex;
 use url::Url;
 
 use crate::utils::notice;
@@ -32,7 +32,7 @@ pub struct Article {
     pub published: NaiveDateTime,
     pub updated: Option<NaiveDateTime>,
     pub title: String,
-    pub org: Rc<Mutex<Org<'static>>>,
+    pub org: Rc<RefCell<Org<'static>>>,
     pub headline: Headline,
     pub subids: Vec<Id>,
 }
@@ -40,7 +40,7 @@ pub struct Article {
 impl Article {
     pub fn html<E: From<Error>, H: HtmlHandler<E>>(&self, handler: &mut H) -> Result<String, E> {
         let mut buf = Vec::new();
-        write_headline_html(&self.org.lock().unwrap(), &self.headline, &mut buf, handler)?;
+        write_headline_html(&self.org.borrow(), &self.headline, &mut buf, handler)?;
 
         Ok(String::from_utf8(buf).unwrap())
     }
@@ -109,9 +109,9 @@ impl Site {
         }
     }
     pub fn load_org_data(&mut self, data: String) {
-        let org = Rc::new(Mutex::new(Org::parse_string(data)));
+        let org = Rc::new(RefCell::new(Org::parse_string(data)));
 
-        let headlines = org.lock().unwrap().headlines().collect::<Vec<_>>();
+        let headlines = org.borrow().headlines().collect::<Vec<_>>();
         for headline in headlines {
             if let Some(article) = load_article(org.clone(), headline) {
                 let article = Rc::new(article);
@@ -145,8 +145,8 @@ impl Site {
     }
 }
 
-fn load_article(org: Rc<Mutex<Org<'static>>>, headline: Headline) -> Option<Article> {
-    let mut org_ = org.lock().unwrap();
+fn load_article(org: Rc<RefCell<Org<'static>>>, headline: Headline) -> Option<Article> {
+    let mut org_ = org.borrow_mut();
     let title = headline.title(&org_);
     if !title.tags.contains(&Cow::Borrowed("blog")) {
         return None;
