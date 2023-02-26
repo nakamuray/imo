@@ -291,13 +291,31 @@ where
         match edge {
             NodeEdge::Start(node) => {
                 let elem = &org[node];
-                if let Element::Title(title) = elem {
-                    let mut title = title.clone();
-                    // adjust all headline level started from 2 (<h2>)
-                    title.level = 2 + title.level - headline.level();
-                    handler.start(&mut writer, &Element::Title(title))?
-                } else {
-                    handler.start(&mut writer, elem)?
+                match elem {
+                    Element::Title(title) => {
+                        let mut title = title.clone();
+                        // adjust all headline level started from 2 (<h2>)
+                        title.level = 2 + title.level - headline.level();
+                        handler.start(&mut writer, &Element::Title(title))?
+                    }
+                    Element::SourceBlock(block) => {
+                        let mut block = block.clone();
+                        // XXX: strip indentation spaces from block content
+                        let indent: String = block
+                            .contents
+                            .chars()
+                            .take_while(|c| c.is_whitespace())
+                            .collect();
+                        block.contents = block
+                            .contents
+                            .lines()
+                            .map(|line| {
+                                line.strip_prefix(&indent).unwrap_or(line).to_string() + "\n"
+                            })
+                            .collect();
+                        handler.start(&mut writer, &Element::SourceBlock(block))?
+                    }
+                    _ => handler.start(&mut writer, elem)?,
                 }
             }
             NodeEdge::End(node) => {
