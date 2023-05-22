@@ -25,4 +25,5 @@ table td {
 }
 pre {
     overflow: auto;
+    padding-bottom: 1em;
 }
