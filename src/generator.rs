@@ -1,7 +1,7 @@
 use crate::{handlers, site};
 use askama::Template;
 use atom_syndication::{ContentBuilder, EntryBuilder, FeedBuilder, LinkBuilder};
-use chrono::{Local, NaiveDateTime, TimeZone};
+use chrono::{DateTime, Local, NaiveDateTime, TimeZone, Utc};
 use filetime::{set_file_mtime, FileTime};
 use orgize::export::{DefaultHtmlHandler, SyntectHtmlHandler};
 use rust_embed::RustEmbed;
@@ -71,8 +71,10 @@ impl Output {
                 file.write_all(data.as_bytes())?;
 
                 if let Some(mtime) = mtime {
-                    let mtime =
-                        FileTime::from_unix_time(mtime.timestamp(), mtime.timestamp_subsec_nanos());
+                    let mtime = FileTime::from_unix_time(
+                        mtime.and_utc().timestamp(),
+                        mtime.and_utc().timestamp_subsec_nanos(),
+                    );
                     set_file_mtime(&p, mtime)?;
                 }
             }
@@ -167,10 +169,14 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
             .take(FEED_ENTRY_COUNT)
         {
             let entry_url = site_url.join(&article.path()).unwrap();
-            let published = Local.from_local_datetime(&article.published).unwrap();
+            let published = Local
+                .from_local_datetime(&article.published)
+                .unwrap()
+                .with_timezone(&Utc);
             let updated = Local
                 .from_local_datetime(&article.updated.unwrap_or(article.published))
-                .unwrap();
+                .unwrap()
+                .with_timezone(&Utc);
             let content = ContentBuilder::default()
                 .content_type(Some("html".to_string()))
                 .value(Some(article.html(&mut handler)?))
@@ -192,7 +198,10 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
             .entries(recent_entries)
             .build();
         if let Some(updated) = site.last_update {
-            let updated = Local.from_local_datetime(&updated).unwrap();
+            let updated = Local
+                .from_local_datetime(&updated)
+                .unwrap()
+                .with_timezone(&Utc);
             feed.set_updated(updated);
         }
         output.write("atom.xml", &feed.to_string(), site.last_update)?;
@@ -203,7 +212,7 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
         let mtime = file
             .metadata
             .last_modified()
-            .and_then(|m| NaiveDateTime::from_timestamp_opt(m as i64, 0));
+            .and_then(|m| DateTime::from_timestamp(m as i64, 0).map(|m| m.naive_local()));
         output.write(&filename, std::str::from_utf8(&file.data).unwrap(), mtime)?;
     }
 

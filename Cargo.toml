@@ -10,12 +10,12 @@ license = "MIT"
 orgize = { version = "0.9.0", features = ["chrono", "syntect", "indexmap"] }
 indextree = "4.3"
 chrono = "0.4.19"
-askama = "0.11.1"
+askama = "0.12.1"
 clap = { version = "4.1.4", features = ["derive"] }
 url = "2.2.2"
 atom_syndication = "0.12.0"
 filetime = "0.2.17"
-rust-embed = { version = "6.4.0", features = ["include-exclude"] }
+rust-embed = { version = "8.5.0", features = ["include-exclude"] }
 
 [dev-dependencies]
 similar-asserts = "1.6.0"
