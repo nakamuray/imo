@@ -43,12 +43,20 @@ struct ArticleTemplate<'a, 'b> {
 pub enum Output {
     Stdout,
     Directory(PathBuf),
+    #[cfg(test)]
+    Test(Rc<std::cell::RefCell<String>>),
 }
 
 impl Output {
     pub fn write(&self, path: &str, data: &str, mtime: Option<NaiveDateTime>) -> Result<()> {
         match self {
             Output::Stdout => {
+                let datetime = if let Some(mtime) = mtime {
+                    format!(" ({mtime})")
+                } else {
+                    "".to_string()
+                };
+                stdout().write_all(&format!("{}{}:\n", path, datetime).as_bytes())?;
                 stdout().write_all(data.as_bytes())?;
             }
             Output::Directory(p) => {
@@ -67,6 +75,22 @@ impl Output {
                         FileTime::from_unix_time(mtime.timestamp(), mtime.timestamp_subsec_nanos());
                     set_file_mtime(&p, mtime)?;
                 }
+            }
+            #[cfg(test)]
+            Output::Test(s) => {
+                let datetime = if let Some(mtime) = mtime {
+                    if path.starts_with("static/") {
+                        // XXX: static files have unknown mtimes which couldn't provide expected
+                        // value
+                        " (XXXX-XX-XX XX:XX:XX)".to_string()
+                    } else {
+                        format!(" ({mtime})")
+                    }
+                } else {
+                    "".to_string()
+                };
+                s.borrow_mut().push_str(&format!("{}{}:\n", path, datetime));
+                s.borrow_mut().push_str(data);
             }
         }
         Ok(())

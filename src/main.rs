@@ -11,6 +11,8 @@ use clap::Parser;
 mod generator;
 mod handlers;
 mod site;
+#[cfg(test)]
+mod tests;
 mod utils;
 
 #[derive(Parser, Debug)]
