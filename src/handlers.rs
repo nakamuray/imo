@@ -34,7 +34,7 @@ impl<E: From<Error>, H: HtmlHandler<E>> ImoHtmlHandler<E, H> {
 impl<E: From<Error>, H: HtmlHandler<E>> Default for ImoHtmlHandler<E, H> {
     fn default() -> Self {
         ImoHtmlHandler {
-            site: Rc::new(Site::new("".to_string(), None, false)),
+            site: Rc::new(Site::new("".to_string(), None, false, false)),
             base: "".to_string(),
             inner: H::default(),
             e: PhantomData,

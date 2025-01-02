@@ -6,7 +6,7 @@
 <h2>{{ year.0 }}</h2>
 <ul>
 {% for article in site.index.get(year).unwrap().iter().rev() %}
-    <li>{{ article.published.format("%Y-%m-%d") }} <a href="{{ base }}{{ article.path() }}">{{ article.title }}</a></li>
+    <li>{{ article.published.format("%Y-%m-%d") }} {% if article.is_draft %}<span class="draft">[draft]</span> {% endif %}<a href="{{ base }}{{ article.path() }}">{{ article.title }}</a></li>
 {% endfor %}
 </ul>
 {% endblock %}

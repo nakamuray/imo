@@ -1,4 +1,11 @@
 * memo
+** draft article                                                      :draft:
+SCHEDULED: <2025-01-03 Fri 13:00>
+:PROPERTIES:
+:ID:       8dd633a1-996e-4330-af8e-c2106dee6102
+:END:
+this is draft article.
+included only when =--draft= option specified.
 ** not published headline
 this article is not published.
 ** published                                                           :blog:

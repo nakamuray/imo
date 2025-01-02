@@ -9,6 +9,10 @@ div.footer {
     margin: 1em;
     text-align: center;
 }
+span.draft {
+    color: red;
+    font-weight: bold;
+}
 .header h1 a {
     color: inherit;
 }

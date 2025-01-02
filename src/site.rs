@@ -35,6 +35,7 @@ pub struct Article {
     pub org: Rc<RefCell<Org<'static>>>,
     pub headline: Headline,
     pub subids: Vec<Id>,
+    pub is_draft: bool,
 }
 
 impl Article {
@@ -90,20 +91,24 @@ pub struct Site {
     pub name: String,
     pub url: Option<Url>,
     pub feed: bool,
+    pub include_draft: bool,
     pub index: BTreeMap<Year, BTreeSet<Rc<Article>>>,
     pub articles: BTreeMap<Id, Rc<Article>>,
+    pub drafts: BTreeMap<Id, Rc<Article>>,
     pub last_update: Option<NaiveDateTime>,
     pub subid_to_articleid_map: BTreeMap<Id, Id>,
 }
 
 impl Site {
-    pub fn new(name: String, url: Option<Url>, feed: bool) -> Self {
+    pub fn new(name: String, url: Option<Url>, feed: bool, include_draft: bool) -> Self {
         Self {
-            name: name,
-            url: url,
-            feed: feed,
+            name,
+            url,
+            feed,
+            include_draft,
             index: BTreeMap::new(),
             articles: BTreeMap::new(),
+            drafts: BTreeMap::new(),
             last_update: None,
             subid_to_articleid_map: BTreeMap::new(),
         }
@@ -116,6 +121,10 @@ impl Site {
             if let Some(article) = load_article(org.clone(), headline) {
                 let article = Rc::new(article);
 
+                if article.is_draft && !self.include_draft {
+                    continue;
+                }
+
                 let updated = article.updated.unwrap_or(article.published);
                 if let Some(last_update) = self.last_update {
                     if updated > last_update {
@@ -125,7 +134,11 @@ impl Site {
                     self.last_update = Some(updated);
                 }
 
-                self.articles.insert(article.id.clone(), article.clone());
+                if article.is_draft {
+                    self.drafts.insert(article.id.clone(), article.clone());
+                } else {
+                    self.articles.insert(article.id.clone(), article.clone());
+                }
 
                 for subid in &article.subids {
                     self.subid_to_articleid_map
@@ -148,7 +161,8 @@ impl Site {
 fn load_article(org: Rc<RefCell<Org<'static>>>, headline: Headline) -> Option<Article> {
     let mut org_ = org.borrow_mut();
     let title = headline.title(&org_);
-    if !title.tags.contains(&Cow::Borrowed("blog")) {
+    let is_draft = title.tags.contains(&Cow::Borrowed("draft"));
+    if !(title.tags.contains(&Cow::Borrowed("blog")) || is_draft) {
         return None;
     }
     let published = match title.planning.as_ref()?.scheduled.as_ref()? {
@@ -246,6 +260,7 @@ fn load_article(org: Rc<RefCell<Org<'static>>>, headline: Headline) -> Option<Ar
         org: org,
         headline: headline,
         subids: subids,
+        is_draft: is_draft,
     })
 }
 

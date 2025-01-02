@@ -13,6 +13,7 @@ fn test_empty() {
         "Test Site".to_string(),
         Some(Url::parse("http://test.site/").unwrap()),
         true,
+        false,
     );
     site.load_org_data(org_data.to_string());
 
@@ -31,6 +32,27 @@ fn test_it() {
     let mut site = site::Site::new(
         "Test Site".to_string(),
         Some(Url::parse("http://test.site/").unwrap()),
+        true,
+        false,
+    );
+    site.load_org_data(org_data.to_string());
+
+    generator::generate(Rc::new(site), generator::Output::Test(output.clone()))
+        .expect("generator success");
+
+    assert_eq!(output.borrow().as_str(), expected);
+}
+
+#[test]
+fn test_draft() {
+    let org_data = include_str!("draft.org");
+    let expected = include_str!("draft.out.txt");
+
+    let output = Rc::new(RefCell::new(String::new()));
+    let mut site = site::Site::new(
+        "Test Site".to_string(),
+        Some(Url::parse("http://test.site/").unwrap()),
+        true,
         true,
     );
     site.load_org_data(org_data.to_string());

@@ -139,6 +139,21 @@ pub fn generate(site: Rc<site::Site>, output: Output) -> Result<()> {
         output.write(&article.path(), &html, Some(mtime))?;
     }
 
+    if site.include_draft {
+        for draft in site.drafts.values() {
+            let content = draft.html(&mut handler)?;
+            let tmpl = ArticleTemplate {
+                site: &site,
+                article: &draft,
+                base: base.clone(),
+                content: content,
+            };
+            let html = tmpl.render().unwrap();
+            let mtime = draft.updated.unwrap_or(draft.published);
+            output.write(&draft.path(), &html, Some(mtime))?;
+        }
+    }
+
     if site.feed {
         let site_url = site.url.as_ref().expect("atom feed needs site_url");
         handler.set_base(site_url.to_string());

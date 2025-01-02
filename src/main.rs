@@ -34,6 +34,10 @@ struct Args {
     #[clap(short, long)]
     output: Option<String>,
 
+    /// include "draft" article or not
+    #[clap(short, long)]
+    draft: bool,
+
     /// org files
     #[clap(required = true)]
     files: Vec<String>,
@@ -44,7 +48,7 @@ fn main() -> Result<()> {
 
     let start = Instant::now();
 
-    let mut site = site::Site::new(args.site_name, args.site_url, args.feed);
+    let mut site = site::Site::new(args.site_name, args.site_url, args.feed, args.draft);
     for fname in args.files {
         let mut f = fs::File::open(fname)?;
         let mut buf = String::new();
@@ -65,13 +69,34 @@ fn main() -> Result<()> {
 
     let duration = start.elapsed();
     let articles = site.articles.len();
+    let drafts = site.drafts.len();
     let indices = site.index.len();
     let statics = generator::StaticFiles::iter().count();
-    if site.feed {
+    if site.feed && site.include_draft {
+        eprintln!(
+            "generate {} files ({} articles, {} drafts, {} indices, 1 feed, {} static files) in {:.2}s",
+            articles + drafts + indices + 1 + statics,
+            articles,
+            drafts,
+            indices,
+            statics,
+            duration.as_secs_f32()
+        );
+    } else if site.feed {
         eprintln!(
             "generate {} files ({} articles, {} indices, 1 feed, {} static files) in {:.2}s",
             articles + indices + 1 + statics,
             articles,
+            indices,
+            statics,
+            duration.as_secs_f32()
+        );
+    } else if site.include_draft {
+        eprintln!(
+            "generate {} files ({} articles, {} drafts, {} indices, {} static files) in {:.2}s",
+            articles + drafts + indices + statics,
+            articles,
+            drafts,
             indices,
             statics,
             duration.as_secs_f32()

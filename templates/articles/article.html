@@ -5,5 +5,6 @@
 {% block content %}
 {{ article.published.format("%Y-%m-%d") }}
 {% if article.updated.is_some() %}(updated: {{ article.updated.unwrap().format("%Y-%m-%d") }}){% endif %}
+{% if article.is_draft %}<span class="draft">[draft]</span>{% endif -%}
 {{ content|safe }}
 {% endblock %}
