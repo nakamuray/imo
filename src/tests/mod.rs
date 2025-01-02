@@ -2,9 +2,20 @@ use super::*;
 use crate::{generator, site};
 use similar_asserts::assert_eq;
 use std::cell::RefCell;
+use std::sync::Once;
+
+static INIT: Once = Once::new();
+fn init() {
+    INIT.call_once(|| {
+        //std::env::set_var("TZ", "Asia/Tokyo");
+        std::env::set_var("TZ", "JST");
+    });
+}
 
 #[test]
 fn test_empty() {
+    init();
+
     let org_data = include_str!("empty.org");
     let expected = include_str!("empty.out.txt");
 
@@ -25,6 +36,8 @@ fn test_empty() {
 
 #[test]
 fn test_it() {
+    init();
+
     let org_data = include_str!("it.org");
     let expected = include_str!("it.out.txt");
 
@@ -45,6 +58,8 @@ fn test_it() {
 
 #[test]
 fn test_draft() {
+    init();
+
     let org_data = include_str!("draft.org");
     let expected = include_str!("draft.out.txt");
 
